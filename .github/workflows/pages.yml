@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: [main, production]
   push:
+    # Publish direct website edits as well as PR merges; main stays unprotected.
     branches: [main, production]
   workflow_dispatch:
 
@@ -12,6 +13,7 @@ permissions:
 
 env:
   SITE_URL: ${{ vars.SITE_URL || 'https://wordcount-solutions.github.io/wordcount-website' }}
+  DREAMHOST_URL: https://wordcount.solutions
 
 jobs:
   validate:
@@ -29,10 +31,12 @@ jobs:
           tool: zola@0.22.1
           fallback: none
       - name: Check both URL layouts and assembly
-        run: make test
+        run: make test assemble verify-artifact
+      - name: Check DreamHost URL layout and assembly
+        run: make assemble verify-artifact SITE_URL="$DREAMHOST_URL" OUTPUT_DIR=.tmp/dreamhost
 
   publish:
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -77,6 +81,13 @@ jobs:
           OUTPUT_DIR="$RUNNER_TEMP/pages"
       - name: Verify assembled artifact
         run: make -C staging-source verify-artifact OUTPUT_DIR="$RUNNER_TEMP/pages"
+      - name: Build DreamHost branch snapshots
+        run: >-
+          make -C staging-source assemble verify-artifact
+          SITE_URL="$DREAMHOST_URL"
+          PRODUCTION_SOURCE="$GITHUB_WORKSPACE/production-source"
+          STAGING_SOURCE="$GITHUB_WORKSPACE/staging-source"
+          OUTPUT_DIR="$RUNNER_TEMP/dreamhost"
       - name: Upload combined site
         uses: actions/upload-pages-artifact@v4
         with:
@@ -84,3 +95,22 @@ jobs:
       - name: Deploy combined site
         id: deployment
         uses: actions/deploy-pages@v4
+      - name: Configure DreamHost SSH
+        env:
+          DREAMHOST_SSH_PRIVATE_KEY: ${{ secrets.DREAMHOST_SSH_PRIVATE_KEY }}
+        run: |
+          test -n "$DREAMHOST_SSH_PRIVATE_KEY" || { echo 'Missing DREAMHOST_SSH_PRIVATE_KEY secret'; exit 1; }
+          umask 077
+          printf '%s\n' "$DREAMHOST_SSH_PRIVATE_KEY" > "$RUNNER_TEMP/dreamhost_key"
+          ssh-keygen -y -P '' -f "$RUNNER_TEMP/dreamhost_key" > /dev/null
+      - name: Publish WordCount Solutions production and staging
+        env:
+          RSYNC_RSH: >-
+            ssh -i ${{ runner.temp }}/dreamhost_key
+            -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes
+            -o UserKnownHostsFile=${{ github.workspace }}/staging-source/scripts/dreamhost_known_hosts
+            -o ConnectTimeout=20
+        run: make -C staging-source sync-dreamhost OUTPUT_DIR="$RUNNER_TEMP/dreamhost"
+      - name: Remove temporary DreamHost key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/dreamhost_key"
