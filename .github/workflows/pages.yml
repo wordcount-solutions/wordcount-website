@@ -3,6 +3,7 @@ name: Publish production and staging
 on:
   pull_request:
     branches: [main, production]
+    types: [opened, synchronize, reopened, closed]
   push:
     # Publish direct website edits as well as PR merges; main stays unprotected.
     branches: [main, production]
@@ -17,7 +18,7 @@ env:
 
 jobs:
   validate:
-    if: github.event_name == 'pull_request'
+    if: github.event_name == 'pull_request' && github.event.action != 'closed'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout proposed change
@@ -36,7 +37,10 @@ jobs:
         run: make assemble verify-artifact SITE_URL="$DREAMHOST_URL" OUTPUT_DIR=.tmp/dreamhost
 
   publish:
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    if: >-
+      github.event_name == 'push' || github.event_name == 'workflow_dispatch' ||
+      (github.event_name == 'pull_request' && github.event.action == 'closed' &&
+      github.event.pull_request.merged == true)
     runs-on: ubuntu-latest
     permissions:
       contents: read
