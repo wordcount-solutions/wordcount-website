@@ -2,12 +2,14 @@
 
 This is the source code for the WordCount Solutions website, built with [Zola](https://www.getzola.org/), a static site generator written in Rust.
 
-| Branch | GitHub Pages URL before the DNS move |
-| --- | --- |
-| `production` | https://wordcount-solutions.github.io/ |
-| `main` | https://wordcount-solutions.github.io/staging/ |
+Production is hosted on DreamHost at `https://wordcount.solutions/`. GitHub Pages continues to publish both branch previews:
 
-`/stage/` redirects to `/staging/`. Both paths are public; staging pages ask search engines not to index them.
+| Branch | GitHub Pages URL |
+| --- | --- |
+| `production` | https://wordcount-solutions.github.io/wordcount-website/ |
+| `main` | https://wordcount-solutions.github.io/wordcount-website/staging/ |
+
+Within the Pages site, `/stage/` redirects to `/staging/`. Both paths are public; staging pages display an amber **STAGING** banner and ask search engines not to index them.
 
 ## Project Structure
 
@@ -78,14 +80,14 @@ Run `make test` to check both URL layouts and the deployment assembly. Run `make
 
 ### Homepage
 
-**File**: `config.toml`
+**File**: `content/_index.md`
 
-The homepage content is configured in `config.toml` under `[extra.content_blocks]`. The main hero section includes:
-- **Title**: "Human-Centered Technical Writing and Editing — On Demand"
+The homepage content is configured in `content/_index.md` under `[[extra.content_blocks]]`. These blocks take precedence over the legacy fallback in `config.toml`, so direct edits to the homepage file are rendered by the next build. The main hero section includes:
+- **Title**: The main homepage heading
 - **Description**: The main tagline/description
 - **Team Section**: Displays team members from `content/team/`
 
-To modify the homepage content, edit the `[[extra.content_blocks]]` sections in `config.toml`. Each block has different properties:
+To modify the homepage content, edit the `[[extra.content_blocks]]` sections in `content/_index.md`. Each block has different properties:
 - `block = "hero"`: Main hero section with title, description, and image
 - `block = "team-section"`: Team member carousel section
 
@@ -231,7 +233,7 @@ All files in `static/` are copied directly to `public/` during the build process
 
 The main site configuration is in `config.toml` at the root. Key sections:
 
-- `[extra.content_blocks]`: Defines homepage sections (hero, team-section, etc.)
+- `[[extra.content_blocks]]`: Legacy homepage fallback when `content/_index.md` has no content blocks
 - `[extra.navigation]`: Site navigation menu configuration
 - `[extra.newsletter]`: Newsletter subscription configuration
 - `social_media_share_image`: Default image used in Open Graph and Twitter link previews; page-specific SEO or image metadata can override it
@@ -276,7 +278,9 @@ Custom templates that override the theme are in `templates/`:
 
 ## Deployment
 
-GitHub Pages is hosted from `wordcount-solutions/wordcount-website`. Because this is a project site, the production URL is `https://wordcount-solutions.github.io/wordcount-website/`, staging is at `https://wordcount-solutions.github.io/wordcount-website/staging/`, and `/stage/` redirects to `/staging/`. One Pages artifact contains the `production` branch at the project root and the `main` branch under `/staging/`. Merging a PR into `main` publishes staging; merging a PR into `production` publishes the root site. An unmerged PR runs validation only. Promote a reviewed staging version with a PR from `main` into `production`.
+GitHub Pages is hosted from `wordcount-solutions/wordcount-website`. The production-branch preview is at `https://wordcount-solutions.github.io/wordcount-website/`, staging is at `https://wordcount-solutions.github.io/wordcount-website/staging/`, and `/stage/` redirects to `/staging/`. One Pages artifact contains the `production` branch at the project root and the `main` branch under `/staging/`. Every push to `main`, including direct commits from GitHub's website editor, rebuilds and publishes staging. `main` is intentionally unprotected; no PR is required. Pushes to `production` publish the root preview. An unmerged PR validates both builds and the combined artifact without deploying. Promote a reviewed staging version with a PR from `main` into `production`.
+
+Staging is identified by the build base URL ending in `/staging` (with an optional trailing slash). The shared layout shows the banner on every staging content page, including the 404 page. Validation rejects missing staging banners or indexing exclusions, including under the GitHub project prefix; immediate pagination redirects only require indexing exclusions.
 
 The workflow checks out both branches after acquiring one deployment lock, builds each with its own base URL, verifies internal links and assets, then publishes the combined artifact. A staging push never promotes content into `/`. Deleted files disappear from the next artifact. Both branches must keep the `make build` interface and `.github/workflows/pages.yml` for push-triggered deployments.
 
@@ -292,13 +296,13 @@ The workflow uses `SITE_URL=https://wordcount-solutions.github.io/wordcount-webs
 
 ### Manual DreamHost deployment
 
-The legacy `make pub` target builds for `stage.wordcount.solutions` and uploads `public/` to DreamHost. Run it explicitly; GitHub Actions never calls it.
+The `make pub` target builds for `https://wordcount.solutions` and uploads `public/` to `dh_wordcount@simson.net:wordcount.solutions/` over SSH. It publishes the current checkout and uses `rsync --delete` to remove obsolete remote files. Run it explicitly from the intended release checkout; GitHub Actions never calls it. DreamHost publishing requires SSH access for that account; GitHub Pages publishing uses the workflow's GitHub permissions instead.
 
 ## Quick Reference
 
 | Task | Location |
 |------|----------|
-| Edit homepage content | `config.toml` |
+| Edit homepage content | `content/_index.md` |
 | Edit Team page | `content/team-page.md` |
 | Edit Philosophy page | `content/philosophy.md` |
 | Edit About page | `content/about.md` |

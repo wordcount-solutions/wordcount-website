@@ -52,7 +52,7 @@ serve:
 clean:
 	rm -rf public .tmp/production .tmp/staging .tmp/pages .tmp/preview-production .tmp/preview-staging .tmp/preview-combined
 
-# Legacy DreamHost deployment remains explicit and separate from Pages.
+# DreamHost production deployment remains explicit and separate from Pages.
 pub:
-	$(MAKE) build BASE_URL=https://stage.wordcount.solutions
-	rsync --archive --delete --verbose public/. simsong_static@simson.net:stage.wordcount.solutions/.
+	$(MAKE) build BASE_URL=https://wordcount.solutions
+	rsync --archive --delete --verbose public/. dh_wordcount@simson.net:wordcount.solutions/.

@@ -18,7 +18,7 @@
               </a>
               {% endif %}
               {% if data.works_button and data.works_button_link %}
-              <a class="works-button c-button c-button--secondary c-button--small" href="{{ data.works_button_link }}">
+              <a class="works-button c-button c-button--secondary c-button--small" href="{{ get_url(path=data.works_button_link) }}">
                 <span class="circle-bg"><i class="ion ion-md-arrow-down button-arrow"></i></span> {{ data.works_button }}
               </a>
               {% endif %}

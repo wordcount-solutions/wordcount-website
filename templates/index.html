@@ -1,7 +1,9 @@
 {% import "components/index.html" as components %}
 {% extends "base.html" %}
 {% block main %}
-{% if config.extra.content_blocks %}
+{% if section.extra.content_blocks %}
+{{ components::content_blocks(data = section.extra.content_blocks) }}
+{% elif config.extra.content_blocks %}
 {{ components::content_blocks(data = config.extra.content_blocks) }}
 {% endif %}
 {% endblock %}

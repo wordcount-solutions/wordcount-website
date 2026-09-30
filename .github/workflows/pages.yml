@@ -4,6 +4,7 @@ on:
   pull_request:
     branches: [main, production]
   push:
+    # Publish direct website edits as well as PR merges; main stays unprotected.
     branches: [main, production]
   workflow_dispatch:
 
@@ -29,10 +30,10 @@ jobs:
           tool: zola@0.22.1
           fallback: none
       - name: Check both URL layouts and assembly
-        run: make test
+        run: make test assemble verify-artifact
 
   publish:
-    if: github.event_name != 'pull_request'
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: read
