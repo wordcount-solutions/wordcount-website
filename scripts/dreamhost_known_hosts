@@ -1,0 +1,6 @@
+# Public SSH host key for the WordCount Solutions DreamHost deployment.
+# Retrieved over the existing trusted dh_wordcount@simson.net connection.
+# Matched the locally trusted wordcount.solutions entry on 2026-09-30.
+# Actions uses this file with StrictHostKeyChecking=yes for rsync over SSH.
+# Verify a replacement through a trusted channel before updating this pin.
+wordcount.solutions ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIEv1iAQLKKrvDaw4dWc/mCow3ENygfazxxPsYp6cncXb
