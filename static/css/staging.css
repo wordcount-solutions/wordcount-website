@@ -1,0 +1,16 @@
+/*
+Make the staging environment visible before the normal site navigation.
+This stylesheet is loaded only by builds whose base URL ends in /staging.
+Use a high-contrast amber strip that spans the viewport at every width.
+Keep it in normal document flow so it never covers content or controls.
+The shared layout supplies the banner text and accessible landmark.
+*/
+#staging-banner {
+  background: #ffdf80;
+  color: #17133b;
+  padding: 12px 20px;
+  text-align: center;
+  font-size: 16px;
+  line-height: 1.5;
+  border-bottom: 2px solid #b67800;
+}

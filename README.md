@@ -2,12 +2,14 @@
 
 This is the source code for the WordCount Solutions website, built with [Zola](https://www.getzola.org/), a static site generator written in Rust.
 
-| Branch | GitHub Pages URL before the DNS move |
-| --- | --- |
-| `production` | https://wordcount-solutions.github.io/ |
-| `main` | https://wordcount-solutions.github.io/staging/ |
+Production is hosted on DreamHost at `https://wordcount.solutions/`, with staging at `https://wordcount.solutions/staging/`. GitHub Actions publishes both branch snapshots to DreamHost and GitHub Pages:
 
-`/stage/` redirects to `/staging/`. Both paths are public; staging pages ask search engines not to index them.
+| Branch | GitHub Pages URL |
+| --- | --- |
+| `production` | https://wordcount-solutions.github.io/wordcount-website/ |
+| `main` | https://wordcount-solutions.github.io/wordcount-website/staging/ |
+
+Within the Pages site, `/stage/` redirects to `/staging/`. Both paths are public; staging pages display an amber **STAGING** banner and ask search engines not to index them.
 
 ## Project Structure
 
@@ -78,14 +80,14 @@ Run `make test` to check both URL layouts and the deployment assembly. Run `make
 
 ### Homepage
 
-**File**: `config.toml`
+**File**: `content/_index.md`
 
-The homepage content is configured in `config.toml` under `[extra.content_blocks]`. The main hero section includes:
-- **Title**: "Human-Centered Technical Writing and Editing — On Demand"
+The homepage content is configured in `content/_index.md` under `[[extra.content_blocks]]`. These blocks take precedence over the legacy fallback in `config.toml`, so direct edits to the homepage file are rendered by the next build. The main hero section includes:
+- **Title**: The main homepage heading
 - **Description**: The main tagline/description
 - **Team Section**: Displays team members from `content/team/`
 
-To modify the homepage content, edit the `[[extra.content_blocks]]` sections in `config.toml`. Each block has different properties:
+To modify the homepage content, edit the `[[extra.content_blocks]]` sections in `content/_index.md`. Each block has different properties:
 - `block = "hero"`: Main hero section with title, description, and image
 - `block = "team-section"`: Team member carousel section
 
@@ -231,9 +233,10 @@ All files in `static/` are copied directly to `public/` during the build process
 
 The main site configuration is in `config.toml` at the root. Key sections:
 
-- `[extra.content_blocks]`: Defines homepage sections (hero, team-section, etc.)
+- `[[extra.content_blocks]]`: Legacy homepage fallback when `content/_index.md` has no content blocks
 - `[extra.navigation]`: Site navigation menu configuration
 - `[extra.newsletter]`: Newsletter subscription configuration
+- `social_media_share_image`: Default image used in Open Graph and Twitter link previews; page-specific SEO or image metadata can override it
 - `show_projects`, `show_blog`, `show_tags`: Boolean flags to control section visibility (currently all set to `false`)
 - `title`, `description`, `base_url`: Site metadata
 
@@ -275,29 +278,53 @@ Custom templates that override the theme are in `templates/`:
 
 ## Deployment
 
-GitHub Pages is hosted from `wordcount-solutions/wordcount-website`. Because this is a project site, the production URL is `https://wordcount-solutions.github.io/wordcount-website/`, staging is at `https://wordcount-solutions.github.io/wordcount-website/staging/`, and `/stage/` redirects to `/staging/`. One Pages artifact contains the `production` branch at the project root and the `main` branch under `/staging/`. Merging a PR into `main` publishes staging; merging a PR into `production` publishes the root site. An unmerged PR runs validation only. Promote a reviewed staging version with a PR from `main` into `production`.
+GitHub Pages is hosted from `wordcount-solutions/wordcount-website`. The production-branch preview is at `https://wordcount-solutions.github.io/wordcount-website/`, staging is at `https://wordcount-solutions.github.io/wordcount-website/staging/`, and `/stage/` redirects to `/staging/`. One Pages artifact contains the `production` branch at the project root and the `main` branch under `/staging/`. Every push to `main`, including direct commits from GitHub's website editor, rebuilds and publishes staging. `main` is intentionally unprotected; no PR is required. Pushes to `production` publish the root preview. An unmerged PR validates both builds and the combined artifact without deploying. Promote a reviewed staging version with a PR from `main` into `production`.
 
-The workflow checks out both branches after acquiring one deployment lock, builds each with its own base URL, verifies internal links and assets, then publishes the combined artifact. A staging push never promotes content into `/`. Deleted files disappear from the next artifact. Both branches must keep the `make build` interface and `.github/workflows/pages.yml` for push-triggered deployments.
+Staging is identified by the build base URL ending in `/staging` (with an optional trailing slash). The shared layout shows the banner on every staging content page, including the 404 page. Validation rejects missing staging banners or indexing exclusions, including under the GitHub project prefix; immediate pagination redirects only require indexing exclusions.
+
+Publishing also explicitly runs when a PR into `main` or `production` is closed **and merged**. Opened, updated, and reopened PRs only validate; closing a PR without merging does not deploy. Direct pushes and manual workflow runs still publish. A merge can emit both a push and a merged-PR event; the shared deployment lock serializes those runs, and each publishes the latest branch snapshots. Copilot review is not a publishing requirement.
+
+The workflow checks out both branches after acquiring one deployment lock. It builds and verifies two combined artifacts: one with GitHub Pages URLs and another with WordCount Solutions URLs. It deploys Pages, then rsyncs the DreamHost artifact to `dh_wordcount@wordcount.solutions:wordcount.solutions/`. Each artifact contains `production` at `/`, `main` at `/staging/`, and the `/stage/` redirect. A staging push never promotes content into `/`. Both snapshots are uploaded together, so production uploads retain staging. Deleted generated files disappear on the next deployment; DreamHost's root `.htaccess` and `.well-known/` are preserved.
+
+Both branches must keep the `make build` interface and the updated `.github/workflows/pages.yml` for push-triggered deployments. Install the deployment changes on `main` first, then copy the workflow to `production` without promoting website content. Later website promotion remains a separate PR from `main` to `production`. An Actions run reads the workflow from its triggering branch, so updating only `main` is insufficient for production pushes.
 
 ### Initial GitHub setup
 
 1. Give `@simsong-codex` write access and repository administration rights needed for Pages setup. Keep GitHub writes under that identity.
-2. Use the **public** `wordcount-solutions/wordcount-website` repository. Leave `wordcount.solutions` DNS and the Pages custom-domain field unchanged for this trial.
+2. Use the **public** `wordcount-solutions/wordcount-website` repository. Keep `wordcount.solutions` DNS pointing to DreamHost and leave the Pages custom-domain field empty.
 3. Push the initial `production` and `main` branches **before enabling the new workflow**. Keep the old single-branch Pages workflow absent or disabled during these initial pushes.
 4. Add `.github/workflows/pages.yml` to both branches, then select **GitHub Actions** in **Settings → Pages**. Permit `main` and `production` in the `github-pages` environment. Run **Publish production and staging** if no push occurs after Pages is enabled.
-5. Verify the production, staging, and redirect URLs listed above before changing DNS.
+5. Verify the production, staging, and redirect URLs on both hosts.
 
-The workflow uses `SITE_URL=https://wordcount-solutions.github.io/wordcount-website` by default. To move to `wordcount.solutions` later, verify domain ownership, configure the Pages custom domain, set the repository variable `SITE_URL` to `https://wordcount.solutions`, publish again, and then change the web DNS records. Preserve mail-related DNS records. A `CNAME` file is not needed for an Actions-published site.
+The workflow uses `SITE_URL=https://wordcount-solutions.github.io/wordcount-website` for Pages and `DREAMHOST_URL=https://wordcount.solutions` for DreamHost. Keep these separate so each build's navigation, assets, canonical URLs, and sitemap point to the correct host. A `CNAME` file is not needed for the Actions-published Pages site.
+
+### DreamHost authentication
+
+Store the deployment private key in the repository Actions secret `DREAMHOST_SSH_PRIVATE_KEY`, and install its public key in the DreamHost account's `~/.ssh/authorized_keys`. The workflow expects a key without a passphrase, writes it to a temporary file readable only by the runner user, validates it without printing it, and removes it in an always-run cleanup step. PR validation never receives this secret or deploys.
+
+SSH uses `scripts/dreamhost_known_hosts` with strict host-key checking. Its public host key was verified through the existing trusted DreamHost connection and against the local known-hosts entry. Verify any future host-key replacement through a trusted channel before updating the file.
+
+| Variable | Purpose |
+| --- | --- |
+| `SITE_URL` | GitHub Pages base URL; overridable with the repository Actions variable of the same name or a Make argument. |
+| `DREAMHOST_URL` | DreamHost public base URL for the separate artifact; defaults to `https://wordcount.solutions`. |
+| `DREAMHOST_DEST` | Make variable for the rsync destination; defaults to `dh_wordcount@wordcount.solutions:wordcount.solutions/`. |
+| `DREAMHOST_SSH_PRIVATE_KEY` | Actions secret used only by the SSH setup step. |
+| `RSYNC_RSH` | SSH command and options used by rsync; Actions selects the temporary key and pinned host-key file. |
+| `RSYNC` | Optional Make override for the rsync executable. |
+| `RUNNER_TEMP`, `GITHUB_WORKSPACE` | GitHub-provided directories for temporary artifacts/key files and checked-out branch sources. |
+
+`make test` includes a real local rsync regression for stale-file removal, staging isolation, preservation of server configuration, and rejection of incomplete artifacts. `make assemble verify-artifact SITE_URL=https://wordcount.solutions OUTPUT_DIR=.tmp/dreamhost` checks the DreamHost layout without uploading. After building the intended branch snapshots, `make sync-dreamhost OUTPUT_DIR=.tmp/dreamhost` verifies and uploads that combined artifact. A failed second-host upload leaves the already successful Pages deployment intact; rerun the workflow to retry.
 
 ### Manual DreamHost deployment
 
-The legacy `make pub` target builds for `stage.wordcount.solutions` and uploads `public/` to DreamHost. Run it explicitly; GitHub Actions never calls it.
+The `make pub` target builds for `DREAMHOST_URL` and uploads `public/` to `DREAMHOST_DEST` over SSH. It publishes the current checkout and removes obsolete generated files while preserving `/staging/`, `/stage/`, root `.htaccess`, and `.well-known/`. Run it explicitly from the intended release checkout; GitHub Actions uses the combined-artifact target instead.
 
 ## Quick Reference
 
 | Task | Location |
 |------|----------|
-| Edit homepage content | `config.toml` |
+| Edit homepage content | `content/_index.md` |
 | Edit Team page | `content/team-page.md` |
 | Edit Philosophy page | `content/philosophy.md` |
 | Edit About page | `content/about.md` |

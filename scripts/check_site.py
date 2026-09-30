@@ -1,4 +1,11 @@
-"""Validate rendered links, local assets, and staging isolation."""
+"""Validate rendered sites before publishing the combined Pages artifact.
+
+Resolve internal links and CSS assets within each build's own URL prefix.
+Recognize staging beneath both custom domains and GitHub project paths.
+Require noindex metadata and a visible banner on staging content pages.
+Allow Zola's immediate redirects to omit the content-page banner.
+Run through Makefile checks for local builds and deployment artifacts.
+"""
 
 import re
 import sys
@@ -20,7 +27,7 @@ def check(root: Path, base: str) -> None:
     root = root.resolve()
     base_parts = urlsplit(base)
     prefix = base_parts.path.rstrip("/") + "/"
-    staging = prefix == "/staging/"
+    staging = prefix.endswith("/staging/")
     for relative in ("index.html", "about/index.html", "contact/index.html", "team-page/index.html", "404.html"):
         if not (root / relative).is_file():
             raise ValueError(f"Missing page: {root / relative}")
@@ -30,6 +37,8 @@ def check(root: Path, base: str) -> None:
         html = document.read_text(encoding="utf-8")
         if staging and 'content="noindex, nofollow"' not in html:
             raise ValueError(f"Staging page is indexable: {document}")
+        if staging and '<title>Redirect</title>' not in html and 'id="staging-banner"' not in html:
+            raise ValueError(f"Staging page is missing its banner: {document}")
         parser = Links()
         parser.feed(html)
         document_url = base.rstrip("/") + "/" + document.relative_to(root).as_posix()

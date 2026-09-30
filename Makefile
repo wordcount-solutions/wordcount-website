@@ -7,8 +7,14 @@ OUTPUT_DIR ?= public
 PORT ?= 1111
 PRODUCTION_SOURCE ?= .
 STAGING_SOURCE ?= .
+# DreamHost URL and rsync destination; RSYNC_RSH supplies SSH options in Actions.
+# DREAMHOST_SSH_PRIVATE_KEY is an Actions secret, written under RUNNER_TEMP there.
+RSYNC ?= rsync
+DREAMHOST_URL ?= https://wordcount.solutions
+DREAMHOST_DEST ?= dh_wordcount@wordcount.solutions:wordcount.solutions/
+RSYNC_FLAGS = --archive --compress --delete-after --exclude=/.htaccess --exclude=/.well-known/
 
-.PHONY: build staging check test assemble verify-artifact preview serve clean pub
+.PHONY: build staging check test assemble verify-artifact sync-dreamhost preview serve clean pub
 
 build:
 	$(ZOLA) build --base-url "$(BASE_URL)" --output-dir "$(OUTPUT_DIR)" --force
@@ -40,6 +46,11 @@ verify-artifact:
 	$(PYTHON) scripts/check_site.py "$(OUTPUT_DIR)/staging" "$(SITE_URL)/staging"
 	$(PYTHON) scripts/check_site.py "$(OUTPUT_DIR)/stage" "$(SITE_URL)/stage" --redirect
 
+# Upload both branch snapshots together, only after validating the whole artifact.
+sync-dreamhost:
+	$(MAKE) verify-artifact SITE_URL="$(DREAMHOST_URL)" OUTPUT_DIR="$(OUTPUT_DIR)"
+	$(RSYNC) $(RSYNC_FLAGS) "$(OUTPUT_DIR)/" "$(DREAMHOST_DEST)"
+
 preview:
 	$(MAKE) build BASE_URL=http://127.0.0.1:$(PORT) OUTPUT_DIR=.tmp/preview-production
 	$(MAKE) build BASE_URL=http://127.0.0.1:$(PORT)/staging OUTPUT_DIR=.tmp/preview-staging
@@ -52,7 +63,7 @@ serve:
 clean:
 	rm -rf public .tmp/production .tmp/staging .tmp/pages .tmp/preview-production .tmp/preview-staging .tmp/preview-combined
 
-# Legacy DreamHost deployment remains explicit and separate from Pages.
+# Manual production upload preserves staging and server-managed configuration.
 pub:
-	$(MAKE) build BASE_URL=https://stage.wordcount.solutions
-	rsync --archive --delete --verbose public/. simsong_static@simson.net:stage.wordcount.solutions/.
+	$(MAKE) build BASE_URL="$(DREAMHOST_URL)"
+	$(RSYNC) $(RSYNC_FLAGS) --exclude=/staging/ --exclude=/stage/ public/ "$(DREAMHOST_DEST)"

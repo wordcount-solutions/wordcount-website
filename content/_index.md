@@ -3,16 +3,16 @@ title = "Home"
 
 [[extra.content_blocks]]
 block = "hero"
-title = "Human-Centered Technical Writing and Editing — On Demand"
-description_html = "Partner with WordCount Solutions for smart, human-enabled content. We deliver tailored technical writing and editing projects that meet your needs without the hassle of hiring a creative team."
+title = "Human-Centered Marketing, Analytics and Text on Demand"
+description_html = "Partner with WordCount Solutions for smart, human-enabled content. We deliver tailored technical marketing and editing projects that meet your needs without the hassle of hiring a creative team."
 image = "/images/art/janeb13-computer-1185626 1024x683.jpeg"
 image_alt = "Woman working at a laptop"
 cta_button_link = "mailto:inquiries@wordcount.solutions"
-cta_button = "Get in touch"
+cta_button = "Get in Touch"
 services_button_link = "/services"
 services_button = "Services"
 works_button_link = "/team-page"
-works_button = "See our team"
+works_button = "See our Team"
 
 [[extra.content_blocks]]
 block = "team-section"

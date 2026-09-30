@@ -8,6 +8,9 @@ taxonomies = [
 ]
 
 [extra]
+# Image used for social link previews (Open Graph and Twitter cards).
+social_media_share_image = "/images/art/janeb13-computer-1185626%201024x683.jpeg"
+
 # Logo configuration
 logo_image = "images/logo3.webp"
 
