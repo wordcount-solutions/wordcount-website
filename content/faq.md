@@ -43,7 +43,7 @@ content_html = """
   </p>
 </div>
 """
-image = "/images/art/Gemini_Generated_Image_apypg8apypg8apyp.jpg"
+image = "/themes/typetype2.jpg.jpg.jpg"
 image_alt = "FAQ"
 
 [[extra.content_blocks]]
