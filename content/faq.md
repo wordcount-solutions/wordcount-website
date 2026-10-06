@@ -43,7 +43,7 @@ content_html = """
   </p>
 </div>
 """
-image = "/images/art/typetype2.jpg.jpg.jpg"
+[image = "/images/art/typetype2.jpg.jpg.jpg"](https://wordcount-solutions.github.io/wordcount-website/images/art/typetype2.jpg)
 image_alt = "FAQ"
 
 [[extra.content_blocks]]
