@@ -24,7 +24,7 @@ content_html = """
   </div>
 </div>
 """
-image = "/images/art/d07ad8b473f1ff031fbc1eadf200936ab78dacf8.jpg"
+image = "/images/art/pen-paper-laptop.jpg"
 image_alt = "Contact"
 
 [[extra.content_blocks]]

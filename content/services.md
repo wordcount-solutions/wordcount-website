@@ -19,7 +19,7 @@ features = [
 
 [[extra.content_blocks]]
 block = "page-image"
-image = "/images/art/bee367a540a116d73a05da822bba2cc37ec87a1a.jpg"
+image = "/images/art/imac-above.jpg"
 image_alt = "Services"
 
 [[extra.content_blocks]]
