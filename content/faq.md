@@ -43,7 +43,7 @@ content_html = """
   </p>
 </div>
 """
-image = "/images/art/typetype2.jpg"
+image = "/images/art/typetype2-cropped-400.jpg"
 image_alt = "FAQ"
 
 [[extra.content_blocks]]
